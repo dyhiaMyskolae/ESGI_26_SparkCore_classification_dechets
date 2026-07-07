@@ -1,0 +1,33 @@
+# Dataset brut et sorties générées (trop volumineux pour git, régénérables)
+data/
+output/
+
+# Environnements Python
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Conda
+*.egg-info/
+
+# Spark
+spark-warehouse/
+metastore_db/
+derby.log
+.spark-checkpoints/
+
+# Modèles / artefacts lourds (à gérer plutôt via Git LFS ou stockage externe si besoin)
+*.keras
+*.h5
+*.parquet
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / éditeurs
+.DS_Store
+.idea/
+.vscode/
+*.swp
