@@ -1,6 +1,9 @@
 # Dataset brut et sorties générées (trop volumineux pour git, régénérables)
-data/
-output/
+data/DATASET/
+output/stage1_clean/
+output/stage2_augmented/
+output/stage3_ready/
+output/reports/
 
 # Environnements Python
 venv/
@@ -22,6 +25,9 @@ derby.log
 *.keras
 *.h5
 *.parquet
+
+# Exception : on garde le modèle CNN final versionné
+!output/model/waste_classifier.keras
 
 # Jupyter
 .ipynb_checkpoints/
