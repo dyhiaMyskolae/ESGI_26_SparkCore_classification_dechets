@@ -1,11 +1,6 @@
 """
 spark_pipeline.py
 ------------------
-SERVICE PYSPARK UNIQUE, mono-bloc (une seule SparkSession), subdivisé en
-3 stages internes. Aucune ligne de ce fichier n'utilise .collect() ou
-.toPandas() : tout résultat est écrit sur disque en Parquet, et les
-agrégats de reporting utilisent .write (pas de rapatriement driver).
-
 STAGE 1 - Preprocessing + validation qualité + échantillonnage
 STAGE 2 - Data augmentation (train uniquement)
 STAGE 3 - Export sur disque en arborescence de fichiers (pour Keras/Streamlit)
@@ -36,9 +31,8 @@ from config import (
     SAMPLE_PER_CLASS_TRAIN, SAMPLE_PER_CLASS_TEST, SAMPLE_SEED,
 )
 
-# ====================================================================
+
 # STAGE 1 - PREPROCESSING + VALIDATION + ECHANTILLONNAGE
-# ====================================================================
 
 PROCESS_SCHEMA = StructType([
     StructField("valid", BooleanType(), True),
@@ -115,7 +109,6 @@ def stage_1_preprocessing(spark, raw_dir: str, output_path: str, split_name: str
 
     valid_df = df.filter(F.col("valid") & (F.col("label") != "unknown"))
 
-    # --- Rapport qualité, écrit par Spark (pas de collect) ---
     quality_report = (
         df.withColumn(
             "status",
@@ -135,7 +128,6 @@ def stage_1_preprocessing(spark, raw_dir: str, output_path: str, split_name: str
     print(f"[STAGE 1 - {split_name}] Rapport qualité écrit dans {REPORTS_DIR}/quality_{split_name}")
     quality_report.show(20, truncate=False)  # affichage debug, action bornée, pas un collect global
 
-    # --- Echantillonnage EXACT par classe, sans collect ---
     # Window : on partitionne par label, on trie aléatoirement (seed fixe =
     # reproductible), puis on numérote les lignes (row_number) et on ne
     # garde que les N premières par classe.
@@ -156,10 +148,7 @@ def stage_1_preprocessing(spark, raw_dir: str, output_path: str, split_name: str
     )
     print(f"[STAGE 1 - {split_name}] Parquet échantillonné écrit : {output_path}")
 
-
-# ====================================================================
 # STAGE 2 - DATA AUGMENTATION (train uniquement)
-# ====================================================================
 
 AUGMENTATION_SCHEMA = ArrayType(StructType([
     StructField("aug_type", StringType(), True),
@@ -220,10 +209,7 @@ def stage_2_augmentation(spark):
     )
     print(f"[STAGE 2] Parquet augmenté écrit : {STAGE2_AUGMENTED_TRAIN}")
 
-
-# ====================================================================
 # STAGE 3 - EXPORT SUR DISQUE (arborescence exploitable par Keras/Streamlit)
-# ====================================================================
 
 def write_partition_to_disk(rows, base_dir: str):
     """Exécuté sur chaque worker : écrit les images de SA partition sur disque."""
@@ -243,10 +229,7 @@ def stage_3_export(spark, parquet_path: str, output_dir: str, split_name: str):
     df.groupBy("label").count().show()
     print(f"[STAGE 3 - {split_name}] Terminé.")
 
-
-# ====================================================================
 # Notre Main function 
-# ====================================================================
 
 def main():
     spark = get_spark_session()
